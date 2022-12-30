@@ -1,73 +1,73 @@
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Main {
     public static void main(String[] args) {
-        String string = "Alibaba or Alibubab? I do not know!";
-        String query = "b*b";
+        String string_1 = "Alibaba or Alibubab? I do not know!";
+        String query_1 = "b*b";
 
-        answer(string, query);
+        String string_2 = "Карл у Клары украл кораллы? Оскар как раз!";
+        String query_2 = "к*р";
+
+        String string_3 = "От топота копыт пыль по полю летит? Путь троп торопит!";
+        String query_3 = "п*т";
+
+        answer(string_1, query_1, true);
+        answer(string_2, query_2, false);
+        answer(string_3, query_3, false);
+        answer(string_3, query_3, true);
+
     }
 
-    public static void answer(String source,String pattern) {
-        System.out.println("Поиск соответствий шаблону <<" + pattern + ">>\n в строке <<" + source + ">>:");
-        List<String> result = findOccurrences(source, pattern);
+    public static void answer(String source, String pattern, boolean caseSensitive) {
+        System.out.println("Поиск соответствий шаблону <<" + pattern + ">> в строке\n<<" + source + ">>:");
+        if (!caseSensitive)
+            System.out.println(("(без разбора регистра)"));
+        List<String> result = findOccurrences(source, pattern, caseSensitive);
         if (result.isEmpty())
             System.out.println("Соответствий не найдено.");
         else
             result.forEach(System.out::println);
+        System.out.println();
     }
 
-    private static List<String> findOccurrences(String source, String pattern) {
+    private static List<String> findOccurrences(String source, String pattern, boolean caseSensitive) {
+
+        String internal = source;
+        int windowSize = pattern.length();
         List<String> result = new ArrayList<>();
-        if (pattern.length() > source.length())
+
+        if (windowSize > source.length()) {
             return result;
+        }
 
-        int patternHash = 0;
-//        asterik_position = позиция '*' в pattern
         int asteriskPosition = pattern.indexOf('*');
-
-//        for (char c : source.toCharArray()) {
-//            if (c == '*') continue;
-//            patternHash += c;
-//        }
-
-//        pattern_hash = сумма кодов символов в pattern без учёта *
-        patternHash = source.chars().filter(i -> i != '*').sum();
-
+        int patternHash = caseSensitive ?
+                pattern.chars().filter(i -> i != '*').sum() :
+                pattern.chars().filter(i -> i != '*').map(Character::toLowerCase).sum();
         int windowHash = 0;
-//        for start от 0 до длина(source) - длина(pattern) + 1
-        for (int start = 0; start < source.length() - pattern.length(); start++) {
-//            if start == 0:
+
+        if (!caseSensitive)
+            internal = internal.toLowerCase();
+
+        for (int start = 0; start < source.length() - windowSize; start++) {
+
             if (start == 0) {
-                //  window_hash = сумма кодов первых длина(pattern) символов source
-                windowHash = source.substring(start, start + pattern.length()).chars().sum();
-                //  window_hash -= код символа в source на позиции asterik_position
-                windowHash -= source.charAt(start + asteriskPosition);
-                //    else:
+                windowHash = internal.substring(start, start + windowSize).chars().sum();
             } else {
-                //        window_hash -= код символа в source на позиции start-1
-                windowHash -= source.charAt(start + source.charAt(start - 1));
-                //        window_hash += код символа в source на позиции start+длина(pattern) - 1
-                windowHash += source.charAt(start + pattern.length() - 1);
-                //        window_hash -= код символа в source на позиции start-1+asterik_position
-                windowHash -= source.charAt(start + asteriskPosition);
+                windowHash -= internal.charAt(start - 1);
+                windowHash += internal.charAt(start + windowSize - 1);
+            }
+            if(windowHash - internal.charAt(start + asteriskPosition) == patternHash) {
+                for (int i = 0; i < windowSize; i++) {
+                    char c = pattern.charAt(i);
+                    if (c != '*' && c != internal.charAt(start + i))
+                        break;
+                    if (i == windowSize - 1)
+                        result.add(source.substring(start, start + windowSize));
+                }
             }
         }
-    //        if window_hash == pattern_hash:
-        if(windowHash == patternHash) {
-            //        for i от 0 до длина(pattern):
-            for (int i = 0; i < pattern.length(); i++) {
-                //        if pattern[i] != '*' И source[start + i] != pattern[i]:
-                //        не подходит
-                //        если подошёл, то добавим start в found
-                //        window_hash += код символа в source на позиции start+asterik_position
-            }
-        }
-//        return found
 
         return result;
     }
